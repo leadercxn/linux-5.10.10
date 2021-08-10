@@ -149,6 +149,8 @@ static int mipi_dsi_device_add(struct mipi_dsi_device *dsi)
 
 	dev_set_name(&dsi->dev, "%s.%d", dev_name(host->dev),  dsi->channel);
 
+	printk("mipi dev_set_name %s.%d",dev_name(host->dev),dsi->channel);
+
 	return device_add(&dsi->dev);
 }
 
@@ -249,6 +251,8 @@ EXPORT_SYMBOL(mipi_dsi_device_unregister);
 static DEFINE_MUTEX(host_lock);
 static LIST_HEAD(host_list);
 
+static struct mipi_dsi_host *mp_mipi_dsi_host = NULL;
+
 /**
  * of_find_mipi_dsi_host_by_node() - find the MIPI DSI host matching a
  *				     device tree node
@@ -262,9 +266,38 @@ struct mipi_dsi_host *of_find_mipi_dsi_host_by_node(struct device_node *node)
 {
 	struct mipi_dsi_host *host;
 
+	struct mipi_dsi_host *temp;
+
 	mutex_lock(&host_lock);
 
-	list_for_each_entry(host, &host_list, list) {
+	if(!mp_mipi_dsi_host)
+	{
+		printk("mp_mipi_dsi_host is empty\n");
+	}
+	else
+	{
+		if(mp_mipi_dsi_host->dev->of_node == node)
+		{
+			printk("return mp_mipi_dsi_host\n");
+			return mp_mipi_dsi_host;
+		}
+	}
+
+	temp = list_first_entry(&host_list, typeof(*temp), list);
+	printk("Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
+	if(list_entry_is_head(temp,&host_list,list))
+	{
+		printk("mipi host_list is empty\n");
+	}
+	else
+	{
+		printk("find %pOF node in mipi host_list_head \n",temp->dev->of_node);
+	}
+
+	list_for_each_entry(host, &host_list, list) 
+	{
+		printk("find %pOF node in mipi host_list \n",host->dev->of_node);
+
 		if (host->dev->of_node == node) {
 			mutex_unlock(&host_lock);
 			return host;
@@ -281,15 +314,63 @@ int mipi_dsi_host_register(struct mipi_dsi_host *host)
 {
 	struct device_node *node;
 
-	for_each_available_child_of_node(host->dev->of_node, node) {
-		/* skip nodes without reg property */
-		if (!of_find_property(node, "reg", NULL))
-			continue;
-		of_mipi_dsi_device_add(host, node);
+	struct mipi_dsi_host *temp;
+	struct mipi_dsi_device *dsi;
+
+	printk("mipi_dsi_host_register ");
+	if(!host)
+	{
+		printk("but mipi_dsi_host *host is null");
+	}
+	else
+	{
+		printk("mipi_dsi_host *host->dev->of_node = %pOF",host->dev->of_node);
 	}
 
 	mutex_lock(&host_lock);
+
+	for_each_available_child_of_node(host->dev->of_node, node) 
+	{
+		/* node = /soc/dsi@5a000000/ports  */
+		printk("host->dev->of_node %pOF , available_child_node is %pOF\n",host->dev->of_node,node);
+
+		/* skip nodes without reg property */
+		if (!of_find_property(node, "reg", NULL))
+		{
+			printk("skip nodes without reg property\n");
+			continue;
+		}
+
+		printk("add host->dev->of_node %pOF in mipi_dsi_list\n",host->dev->of_node);
+		dsi = of_mipi_dsi_device_add(host, node);
+		if(!dsi)
+		{
+			printk("of_mipi_dsi_device_add return null");
+		}
+	}
+
+	temp = list_first_entry(&host_list, typeof(*temp), list);
+	printk("Before add ,Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
+
 	list_add_tail(&host->list, &host_list);
+
+	mp_mipi_dsi_host = list_first_entry(&host_list, typeof(*mp_mipi_dsi_host), list);
+
+	/**
+	 * Add log
+	 */
+	temp = list_first_entry(&host_list, typeof(*temp), list);
+	printk("After add ,Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
+	if(list_entry_is_head(temp,&host_list,list))
+	{
+		printk("after add mipi node to host_list ,but is empty\n");
+	}
+	else
+	{
+		printk("after add mipi node to host_list ,find %pOF node in mipi host_list_head \n",temp->dev->of_node);
+	}
+	printk("\n");
+
 	mutex_unlock(&host_lock);
 
 	return 0;

@@ -396,10 +396,13 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 		.channel = 0,
 		.node = NULL,
 	};
+	printk("rpi_touchscreen_probe be called...\n");
 
 	ts = devm_kzalloc(dev, sizeof(*ts), GFP_KERNEL);
 	if (!ts)
+	{
 		return -ENOMEM;
+	}
 
 	i2c_set_clientdata(i2c, ts);
 
@@ -426,24 +429,41 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 	/* Look up the DSI host.  It needs to probe before we do. */
 	endpoint = of_graph_get_next_endpoint(dev->of_node, NULL);
 	if (!endpoint)
+	{
 		return -ENODEV;
+	}
+		
+	printk("endpoint = %pOF\n",endpoint);
 
 	dsi_host_node = of_graph_get_remote_port_parent(endpoint);
 	if (!dsi_host_node)
+	{
 		goto error;
+	}
 
+	printk("dsi_host_node = %pOF\n",dsi_host_node);
+
+#if 0
 	host = of_find_mipi_dsi_host_by_node(dsi_host_node);
 	of_node_put(dsi_host_node);
 	if (!host) {
 		of_node_put(endpoint);
+		printk("of_find_mipi_dsi_host_by_node fail\n");
 		return -EPROBE_DEFER;
 	}
+#endif
 
+
+#if 0	
 	info.node = of_graph_get_remote_port(endpoint);
 	if (!info.node)
+	{
+		printk("of_graph_get_remote_port fail\n");
 		goto error;
+	}
 
 	of_node_put(endpoint);
+
 
 	ts->dsi = mipi_dsi_device_register_full(host, &info);
 	if (IS_ERR(ts->dsi)) {
@@ -451,6 +471,12 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 			PTR_ERR(ts->dsi));
 		return PTR_ERR(ts->dsi);
 	}
+	
+
+	ts->dsi->dev.of_node = info.node;
+	ts->dsi->channel = info.channel;
+	strlcpy(ts->dsi->name, info.type, sizeof(ts->dsi->name));
+#endif
 
 	drm_panel_init(&ts->base, dev, &rpi_touchscreen_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
@@ -460,6 +486,7 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 	 */
 	drm_panel_add(&ts->base);
 
+	printk("pi_touchscreen_probe success\n");
 	return 0;
 
 error:

@@ -1206,11 +1206,23 @@ EXPORT_SYMBOL_GPL(drm_bridge_hpd_notify);
 struct drm_bridge *of_drm_find_bridge(struct device_node *np)
 {
 	struct drm_bridge *bridge;
+	struct drm_bridge *temp;
 
 	mutex_lock(&bridge_lock);
 
-	list_for_each_entry(bridge, &bridge_list, list) {
-		if (bridge->of_node == np) {
+	temp = list_first_entry(&bridge_list, typeof(*temp), list);
+	if(list_entry_is_head(temp,&bridge_list,list))
+	{
+		printk("[of_drm_find_bridge] bridge_list is empty\n");
+	}
+	printk("\n");
+
+	list_for_each_entry(bridge, &bridge_list, list) 
+	{
+		printk("[of_drm_find_bridge] bridge_list node : %pOF\n",bridge->of_node);
+		if (bridge->of_node == np) 
+		{
+			printk("[of_drm_find_bridge] got the match node : %pOF\n",bridge->of_node);
 			mutex_unlock(&bridge_lock);
 			return bridge;
 		}

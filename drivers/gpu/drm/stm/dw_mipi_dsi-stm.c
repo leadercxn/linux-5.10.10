@@ -348,6 +348,8 @@ static int dw_mipi_dsi_stm_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret;
 
+	printk("dw_mipi_dsi_stm_probe be called");
+
 	dsi = devm_kzalloc(dev, sizeof(*dsi), GFP_KERNEL);
 	if (!dsi)
 		return -ENOMEM;
@@ -417,18 +419,23 @@ static int dw_mipi_dsi_stm_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, dsi);
 
 	dsi->dsi = dw_mipi_dsi_probe(pdev, &dw_mipi_dsi_stm_plat_data);
-	if (IS_ERR(dsi->dsi)) {
+	if (IS_ERR(dsi->dsi)) 
+	{
 		ret = PTR_ERR(dsi->dsi);
 		if (ret != -EPROBE_DEFER)
 			DRM_ERROR("Failed to initialize mipi dsi host: %d\n", ret);
 		goto err_dsi_probe;
 	}
 
+	printk("dw_mipi_dsi_stm_probe success!");
+
 	return 0;
 
 err_dsi_probe:
+	printk("dw_mipi_dsi_stm_probe err_dsi_probe!");
 	clk_disable_unprepare(dsi->pllref_clk);
 err_clk_get:
+	printk("dw_mipi_dsi_stm_probe err_clk_get!");
 	regulator_disable(dsi->vdd_supply);
 
 	return ret;

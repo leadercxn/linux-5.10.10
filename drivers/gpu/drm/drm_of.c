@@ -256,28 +256,48 @@ int drm_of_find_panel_or_bridge(const struct device_node *np,
 		return -ENODEV;
 
 	remote = of_graph_get_remote_node(np, port, endpoint);
+	if(remote)
+	{
+		printk("[drm_of_find_panel_or_bridge] remote = %pOF\n",remote);
+	}
+	else
+	{
+		printk("[drm_of_find_panel_or_bridge] remote is null\n");
+	}
+
 	if (!remote)
 		return -ENODEV;
 
-	if (panel) {
+	if (panel) 
+	{
 		*panel = of_drm_find_panel(remote);
 		if (!IS_ERR(*panel))
 			ret = 0;
 		else
+		{
+			printk("[drm_of_find_panel_or_bridge] no panel\n");
 			*panel = NULL;
+		}
+			
 	}
 
 	/* No panel found yet, check for a bridge next. */
-	if (bridge) {
-		if (ret) {
+	if (bridge) 
+	{
+		if (ret) 
+		{
+			printk("[drm_of_find_panel_or_bridge] find bridge\n");
 			*bridge = of_drm_find_bridge(remote);
 			if (*bridge)
 				ret = 0;
-		} else {
+		} 
+		else 
+		{
+			printk("[drm_of_find_panel_or_bridge] no bridge\n");
 			*bridge = NULL;
 		}
-
 	}
+	
 
 	of_node_put(remote);
 	return ret;

@@ -243,14 +243,26 @@ EXPORT_SYMBOL(drm_panel_get_modes);
 struct drm_panel *of_drm_find_panel(const struct device_node *np)
 {
 	struct drm_panel *panel;
+	struct drm_panel *temp;
 
 	if (!of_device_is_available(np))
 		return ERR_PTR(-ENODEV);
 
 	mutex_lock(&panel_lock);
 
-	list_for_each_entry(panel, &panel_list, list) {
-		if (panel->dev->of_node == np) {
+	temp = list_first_entry(&panel_list, typeof(*temp), list);
+	if(list_entry_is_head(temp,&panel_list,list))
+	{
+		printk("[of_drm_find_panel] panel_list is empty\n");
+	}
+	printk("\n");
+
+	list_for_each_entry(panel, &panel_list, list) 
+	{
+		printk("[of_drm_find_panel] panel_list node : %pOF\n",panel->dev->of_node);
+		if (panel->dev->of_node == np) 
+		{
+			printk("[of_drm_find_panel] got the match node : %pOF\n",panel->dev->of_node);
 			mutex_unlock(&panel_lock);
 			return panel;
 		}

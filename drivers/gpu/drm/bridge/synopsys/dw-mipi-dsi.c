@@ -1226,36 +1226,51 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 		dev_err(dev, "Failed to register MIPI host: %d\n", ret);
 		goto err_pmr_enable;
 	}
+	printk("[__dw_mipi_dsi_probe] mipi_dsi_host_register success\n");
 
 	dsi->bridge.driver_private = dsi;
 	dsi->bridge.funcs = &dw_mipi_dsi_bridge_funcs;
 #ifdef CONFIG_OF
 	dsi->bridge.of_node = pdev->dev.of_node;
 #endif
+	printk("[__dw_mipi_dsi_probe] nb_endpoints = %pOF \n",pdev->dev.of_node);
 
 	/* Get number of endpoints */
 	nb_endpoints = of_graph_get_endpoint_count(pdev->dev.of_node);
-	if (!nb_endpoints) {
+	printk("[__dw_mipi_dsi_probe] nb_endpoints = %d \n",nb_endpoints);
+	if (!nb_endpoints) 
+	{
+		printk("[__dw_mipi_dsi_probe] of_graph_get_endpoint_count error\n");
 		ret = -ENODEV;
 		goto err_host_reg;
 	}
 
-	for (i = 1; i < nb_endpoints; i++) {
+	for (i = 1; i < nb_endpoints; i++) 
+	{
 		ret = drm_of_find_panel_or_bridge(pdev->dev.of_node, i, 0,
 						  &panel, &bridge);
 		if (!ret)
 			break;
 		else if (ret == -EPROBE_DEFER)
+		{
+			printk("[__dw_mipi_dsi_probe] drm_of_find_panel_or_bridge error\n");
 			goto err_host_reg;
+		}
 	}
 
 	/* check if an error is returned >> no panel or bridge detected */
 	if (ret)
+	{
+		printk("[__dw_mipi_dsi_probe] after drm_of_find_panel_or_bridge ,ret = %d\n",ret);
 		goto err_host_reg;
+	}
 
-	if (panel) {
+	if (panel) 
+	{
 		bridge = drm_panel_bridge_add_typed(panel, DRM_MODE_CONNECTOR_DSI);
-		if (IS_ERR(bridge)) {
+		if (IS_ERR(bridge)) 
+		{
+			printk("[__dw_mipi_dsi_probe] drm_panel_bridge_add_typed error\n");
 			ret = PTR_ERR(bridge);
 			goto err_host_reg;
 		}
@@ -1268,9 +1283,11 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 	return dsi;
 
 err_host_reg:
+	printk("[__dw_mipi_dsi_probe] err_host_reg \n");
 	mipi_dsi_host_unregister(&dsi->dsi_host);
 
 err_pmr_enable:
+	printk("[__dw_mipi_dsi_probe] err_pmr_enable \n");
 	pm_runtime_disable(dev);
 	dw_mipi_dsi_debugfs_remove(dsi);
 

@@ -1179,7 +1179,10 @@ int of_modalias_node(struct device_node *node, char *modalias, int len)
 
 	compatible = of_get_property(node, "compatible", &cplen);
 	if (!compatible || strlen(compatible) > cplen)
+	{
+		pr_err("Can't get compatible property...");
 		return -ENODEV;
+	}
 	p = strchr(compatible, ',');
 	strlcpy(modalias, p ? p + 1 : compatible, len);
 	return 0;
