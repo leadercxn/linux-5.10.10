@@ -19,6 +19,15 @@
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_print.h>
 
+#include <drm/drm_atomic_helper.h>
+#include <drm/drm_bridge.h>
+#include <drm/drm_edid.h>
+#include <drm/drm_of.h>
+#include <drm/drm_panel.h>
+#include <drm/drm_probe_helper.h>
+#include <drm/drm_simple_kms_helper.h>
+
+
 #define HWVER_130			0x31333000	/* IP version 1.30 */
 #define HWVER_131			0x31333100	/* IP version 1.31 */
 
@@ -440,6 +449,18 @@ err_clk_get:
 
 	return ret;
 }
+
+
+
+/**
+ * @brief modify probe code reference to vc4_dsi_dev_probe()
+ * @author cxn
+ */
+static const struct mipi_dsi_host_ops stm_dsi_host_ops = {
+	.attach = NULL,
+	.detach = NULL,
+	.transfer = NULL,
+};
 
 static int dw_mipi_dsi_stm_remove(struct platform_device *pdev)
 {

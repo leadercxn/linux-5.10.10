@@ -1161,6 +1161,7 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 	int i, nb_endpoints;
 	int ret;
 
+	/* (dw_mipi_dsi) dsi*/
 	dsi = devm_kzalloc(dev, sizeof(*dsi), GFP_KERNEL);
 	if (!dsi)
 		return ERR_PTR(-ENOMEM);
@@ -1174,6 +1175,7 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 		return ERR_PTR(-ENODEV);
 	}
 
+	/* turn dw_mipi_dsi_stm'base to dw_mipi_dsi'base */
 	if (!plat_data->base) {
 		dsi->base = devm_platform_ioremap_resource(pdev, 0);
 		if (IS_ERR(dsi->base))
@@ -1229,6 +1231,8 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 		goto err_pmr_enable;
 	}
 	printk("[__dw_mipi_dsi_probe] mipi_dsi_host_register success\n");
+
+	
 
 	dsi->bridge.driver_private = dsi;
 	dsi->bridge.funcs = &dw_mipi_dsi_bridge_funcs;

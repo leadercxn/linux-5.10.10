@@ -1210,8 +1210,20 @@ int ltdc_load(struct drm_device *ddev)
 
 	DRM_DEBUG_DRIVER("\n");
 
+	printk("ltdc_load be called\n");
+
+	if(!np)
+	{
+		printk("[ltdc_load] np is null \n");
+	}
+	else
+	{
+		printk("[ltdc_load] nb_endpoints = %pOF \n",np);
+	}
+	
 	/* Get number of endpoints */
 	nb_endpoints = of_graph_get_endpoint_count(np);
+	printk("[ltdc_load] nb_endpoints = %d \n",nb_endpoints);
 	if (!nb_endpoints)
 		return -ENODEV;
 
@@ -1228,20 +1240,32 @@ int ltdc_load(struct drm_device *ddev)
 	}
 
 	/* Get endpoints if any */
-	for (i = 0; i < nb_endpoints; i++) {
+	for (i = 0; i < nb_endpoints; i++) 
+	{
 		ret = drm_of_find_panel_or_bridge(np, 0, i, &panel, &bridge);
-
+		
+		if(!panel)
+		{
+			printk("[ltdc_load] after drm_of_find_panel_or_bridge,panel is null");
+		}
 		/*
 		 * If at least one endpoint is -ENODEV, continue probing,
 		 * else if at least one endpoint returned an error
 		 * (ie -EPROBE_DEFER) then stop probing.
 		 */
 		if (ret == -ENODEV)
+		{
+			printk("drm_of_find_panel_or_bridge return ENODEV\n");
 			continue;
+		}
 		else if (ret)
+		{
+			printk("drm_of_find_panel_or_bridge err , goto err\n");
 			goto err;
+		}
 
-		if (panel) {
+		if (panel) 
+		{
 			bridge = drm_panel_bridge_add_typed(panel,
 							    DRM_MODE_CONNECTOR_DPI);
 			if (IS_ERR(bridge)) {
@@ -1338,6 +1362,8 @@ int ltdc_load(struct drm_device *ddev)
 
 	pm_runtime_enable(ddev->dev);
 
+	printk("ltdc_load success\n");
+
 	return 0;
 err:
 	for (i = 0; i < nb_endpoints; i++)
@@ -1345,6 +1371,7 @@ err:
 
 	clk_disable_unprepare(ldev->pixel_clk);
 
+	printk("ltdc_load fail\n");
 	return ret;
 }
 

@@ -71,6 +71,7 @@ static int drv_load(struct drm_device *ddev)
 	struct ltdc_device *ldev;
 	int ret;
 
+	printk("drv_load be called\n");
 	DRM_DEBUG("%s\n", __func__);
 
 	ldev = devm_kzalloc(ddev->dev, sizeof(*ldev), GFP_KERNEL);
@@ -183,6 +184,8 @@ static int stm_drm_platform_probe(struct platform_device *pdev)
 
 	DRM_DEBUG("%s\n", __func__);
 
+	printk("stm_drm_platform_probe be called...\n");
+
 	dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
 
 	ddev = drm_dev_alloc(&drv_driver, dev);
@@ -199,9 +202,12 @@ static int stm_drm_platform_probe(struct platform_device *pdev)
 
 	drm_fbdev_generic_setup(ddev, 16);
 
+
+	printk("[stm_drm_platform_probe]  success\n");
 	return 0;
 
 err_put:
+	printk("[stm_drm_platform_probe]  fail\n");
 	drm_dev_put(ddev);
 
 	return ret;
