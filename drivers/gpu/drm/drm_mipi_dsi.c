@@ -251,8 +251,6 @@ EXPORT_SYMBOL(mipi_dsi_device_unregister);
 static DEFINE_MUTEX(host_lock);
 static LIST_HEAD(host_list);
 
-static struct mipi_dsi_host *mp_mipi_dsi_host = NULL;
-
 /**
  * of_find_mipi_dsi_host_by_node() - find the MIPI DSI host matching a
  *				     device tree node
@@ -270,18 +268,6 @@ struct mipi_dsi_host *of_find_mipi_dsi_host_by_node(struct device_node *node)
 
 	mutex_lock(&host_lock);
 
-	if(!mp_mipi_dsi_host)
-	{
-		printk("mp_mipi_dsi_host is empty\n");
-	}
-	else
-	{
-		if(mp_mipi_dsi_host->dev->of_node == node)
-		{
-			printk("return mp_mipi_dsi_host\n");
-			return mp_mipi_dsi_host;
-		}
-	}
 
 	temp = list_first_entry(&host_list, typeof(*temp), list);
 	printk("Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
@@ -353,8 +339,6 @@ int mipi_dsi_host_register(struct mipi_dsi_host *host)
 	printk("Before add ,Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
 
 	list_add_tail(&host->list, &host_list);
-
-	mp_mipi_dsi_host = list_first_entry(&host_list, typeof(*mp_mipi_dsi_host), list);
 
 	/**
 	 * Add log

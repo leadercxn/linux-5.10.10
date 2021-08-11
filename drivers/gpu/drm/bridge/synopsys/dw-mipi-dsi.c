@@ -1040,6 +1040,8 @@ static int dw_mipi_dsi_bridge_attach(struct drm_bridge *bridge,
 {
 	struct dw_mipi_dsi *dsi = bridge_to_dsi(bridge);
 
+	printk("dw_mipi_dsi_bridge_attach be called");
+
 	if (!bridge->encoder) {
 		DRM_ERROR("Parent encoder object not found\n");
 		return -ENODEV;
@@ -1267,6 +1269,7 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 
 	if (panel) 
 	{
+		printk("[__dw_mipi_dsi_probe] have found panel ,go to turn to brideg\n");
 		bridge = drm_panel_bridge_add_typed(panel, DRM_MODE_CONNECTOR_DSI);
 		if (IS_ERR(bridge)) 
 		{
@@ -1274,6 +1277,11 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 			ret = PTR_ERR(bridge);
 			goto err_host_reg;
 		}
+	}
+
+	if(bridge)
+	{
+		printk("[__dw_mipi_dsi_probe] have turn %pOF bridge ,go to add brideg\n",bridge->of_node);
 	}
 
 	dsi->panel_bridge = bridge;

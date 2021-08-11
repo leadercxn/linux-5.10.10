@@ -280,9 +280,9 @@ static int rpi_touchscreen_disable(struct drm_panel *panel)
 {
 	struct rpi_touchscreen *ts = panel_to_ts(panel);
 
-	rpi_touchscreen_i2c_write(ts, REG_PWM, 0);
+//	rpi_touchscreen_i2c_write(ts, REG_PWM, 0);
 
-	rpi_touchscreen_i2c_write(ts, REG_POWERON, 0);
+//	rpi_touchscreen_i2c_write(ts, REG_POWERON, 0);
 	udelay(1);
 
 	return 0;
@@ -424,7 +424,12 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 	}
 
 	/* Turn off at boot, so we can cleanly sequence powering on. */
-	rpi_touchscreen_i2c_write(ts, REG_POWERON, 0);
+	rpi_touchscreen_i2c_write(ts, REG_POWERON, 1);
+
+	/* Turn on the backlight. */
+	rpi_touchscreen_i2c_write(ts, REG_PWM, 255);
+
+	printk("open REG_PWM...\n");
 
 	/* Look up the DSI host.  It needs to probe before we do. */
 	endpoint = of_graph_get_next_endpoint(dev->of_node, NULL);
@@ -471,11 +476,6 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 			PTR_ERR(ts->dsi));
 		return PTR_ERR(ts->dsi);
 	}
-	
-
-	ts->dsi->dev.of_node = info.node;
-	ts->dsi->channel = info.channel;
-	strlcpy(ts->dsi->name, info.type, sizeof(ts->dsi->name));
 #endif
 
 	drm_panel_init(&ts->base, dev, &rpi_touchscreen_funcs,

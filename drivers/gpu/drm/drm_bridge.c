@@ -178,6 +178,8 @@ int drm_bridge_attach(struct drm_encoder *encoder, struct drm_bridge *bridge,
 {
 	int ret;
 
+	printk("drm_bridge_attach be call\n");
+
 	if (!encoder || !bridge)
 		return -EINVAL;
 
@@ -196,6 +198,7 @@ int drm_bridge_attach(struct drm_encoder *encoder, struct drm_bridge *bridge,
 		list_add(&bridge->chain_node, &encoder->bridge_chain);
 
 	if (bridge->funcs->attach) {
+		printk("[drm_bridge_attach] Go to panel_bridge_attach");
 		ret = bridge->funcs->attach(bridge, flags);
 		if (ret < 0)
 			goto err_reset_bridge;

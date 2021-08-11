@@ -75,7 +75,6 @@
 			status = "okay";
 		};
 	*/
-
 	lcd@45 {
 		compatible = "raspberrypi,7inch-touchscreen-panel";
 		reg = <0x45>;
