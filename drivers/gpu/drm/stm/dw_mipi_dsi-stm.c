@@ -209,20 +209,32 @@ static int dw_mipi_dsi_phy_init(void *priv_data)
 	u32 val;
 	int ret;
 
+	if(!priv_data)
+	{
+		printk("[dw_mipi_dsi_phy_init] priv_data is null\n");
+	}
 	/* Enable the regulator */
 	dsi_set(dsi, DSI_WRPCR, WRPCR_REGEN | WRPCR_BGREN);
 	ret = readl_poll_timeout(dsi->base + DSI_WISR, val, val & WISR_RRS,
 				 SLEEP_US, TIMEOUT_US);
 	if (ret)
+	{
 		DRM_DEBUG_DRIVER("!TIMEOUT! waiting REGU, let's continue\n");
+		printk("[dw_mipi_dsi_phy_init] !TIMEOUT! waiting REGU, let's continue\n");
+	}
+		
 
 	/* Enable the DSI PLL & wait for its lock */
 	dsi_set(dsi, DSI_WRPCR, WRPCR_PLLEN);
 	ret = readl_poll_timeout(dsi->base + DSI_WISR, val, val & WISR_PLLLS,
 				 SLEEP_US, TIMEOUT_US);
 	if (ret)
+	{
 		DRM_DEBUG_DRIVER("!TIMEOUT! waiting PLL, let's continue\n");
+		printk("[dw_mipi_dsi_phy_init] !TIMEOUT! waiting PLL, let's continue\n");
+	}
 
+	printk("[dw_mipi_dsi_phy_init] success\n");
 	return 0;
 }
 
@@ -256,10 +268,13 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 	int ret, bpp;
 	u32 val;
 
+	printk("dw_mipi_dsi_get_lane_mbps be call...\n");
+
 	/* Update lane capabilities according to hw version */
 	dsi->lane_min_kbps = LANE_MIN_KBPS;
 	dsi->lane_max_kbps = LANE_MAX_KBPS;
-	if (dsi->hw_version == HWVER_131) {
+	if (dsi->hw_version == HWVER_131)
+	{
 		dsi->lane_min_kbps *= 2;
 		dsi->lane_max_kbps *= 2;
 	}
@@ -268,6 +283,7 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 
 	/* Compute requested pll out */
 	bpp = mipi_dsi_pixel_format_to_bpp(format);
+	printk("[dw_mipi_dsi_get_lane_mbps] mode->clock = %u,bpp = %u\n",mode->clock,bpp);
 	pll_out_khz = mode->clock * bpp / lanes;
 
 	DRM_INFO("pll_out_khz = %u\n",pll_out_khz);
@@ -323,6 +339,9 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 	DRM_DEBUG_DRIVER("pll_in %ukHz pll_out %ukHz lane_mbps %uMHz\n",
 			 pll_in_khz, pll_out_khz, *lane_mbps);
 
+	printk("pll_in %ukHz pll_out %ukHz lane_mbps %uMHz\n",
+			 pll_in_khz, pll_out_khz, *lane_mbps);
+	printk("[dw_mipi_dsi_get_lane_mbps] success...\n");
 	return 0;
 }
 

@@ -162,6 +162,8 @@ of_mipi_dsi_device_add(struct mipi_dsi_host *host, struct device_node *node)
 	int ret;
 	u32 reg;
 
+	printk("of_mipi_dsi_device_add be called\n");
+
 	if (of_modalias_node(node, info.type, sizeof(info.type)) < 0) {
 		drm_err(host, "modalias failure on %pOF\n", node);
 		return ERR_PTR(-EINVAL);
@@ -206,6 +208,8 @@ mipi_dsi_device_register_full(struct mipi_dsi_host *host,
 	struct mipi_dsi_device *dsi;
 	int ret;
 
+	printk("mipi_dsi_device_register_full be called\n");
+
 	if (!info) {
 		drm_err(host, "invalid mipi_dsi_device_info pointer\n");
 		return ERR_PTR(-EINVAL);
@@ -234,6 +238,7 @@ mipi_dsi_device_register_full(struct mipi_dsi_host *host,
 		return ERR_PTR(ret);
 	}
 
+	printk("mipi_dsi_device_register_full success\n");
 	return dsi;
 }
 EXPORT_SYMBOL(mipi_dsi_device_register_full);
@@ -264,27 +269,13 @@ struct mipi_dsi_host *of_find_mipi_dsi_host_by_node(struct device_node *node)
 {
 	struct mipi_dsi_host *host;
 
-	struct mipi_dsi_host *temp;
-
 	mutex_lock(&host_lock);
-
-
-	temp = list_first_entry(&host_list, typeof(*temp), list);
-	printk("Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
-	if(list_entry_is_head(temp,&host_list,list))
-	{
-		printk("mipi host_list is empty\n");
-	}
-	else
-	{
-		printk("find %pOF node in mipi host_list_head \n",temp->dev->of_node);
-	}
 
 	list_for_each_entry(host, &host_list, list) 
 	{
-		printk("find %pOF node in mipi host_list \n",host->dev->of_node);
-
-		if (host->dev->of_node == node) {
+		if (host->dev->of_node == node) 
+		{
+			printk("find %pOF match node in mipi host_list \n",host->dev->of_node);
 			mutex_unlock(&host_lock);
 			return host;
 		}
@@ -336,7 +327,6 @@ int mipi_dsi_host_register(struct mipi_dsi_host *host)
 	}
 
 	temp = list_first_entry(&host_list, typeof(*temp), list);
-	printk("Before add ,Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
 
 	list_add_tail(&host->list, &host_list);
 
@@ -344,7 +334,6 @@ int mipi_dsi_host_register(struct mipi_dsi_host *host)
 	 * Add log
 	 */
 	temp = list_first_entry(&host_list, typeof(*temp), list);
-	printk("After add ,Address of mipi host_list is 0x%08x ,list_first_entry address is 0x%08x\n",&host_list,temp);
 	if(list_entry_is_head(temp,&host_list,list))
 	{
 		printk("after add mipi node to host_list ,but is empty\n");

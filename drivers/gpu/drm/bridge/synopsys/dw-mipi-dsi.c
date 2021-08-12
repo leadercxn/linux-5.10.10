@@ -430,31 +430,31 @@ static int dw_mipi_dsi_read_status(struct dw_mipi_dsi *dsi)
 	val = dsi_read(dsi, DSI_INT_ST1);
 
 	if (val & GPRXE)
-		DRM_DEBUG_DRIVER("DSI Generic payload receive error\n");
+		printk("DSI Generic payload receive error\n");
 	if (val & GPRDE)
-		DRM_DEBUG_DRIVER("DSI Generic payload read error\n");
+		printk("DSI Generic payload read error\n");
 	if (val & GPTXE)
-		DRM_DEBUG_DRIVER("DSI Generic payload transmit error\n");
+		printk("DSI Generic payload transmit error\n");
 	if (val & GPWRE)
-		DRM_DEBUG_DRIVER("DSI Generic payload write error\n");
+		printk("DSI Generic payload write error\n");
 	if (val & GCWRE)
-		DRM_DEBUG_DRIVER("DSI Generic command write error\n");
+		printk("DSI Generic command write error\n");
 	if (val & DPIPLDWE)
-		DRM_DEBUG_DRIVER("DSI DPI payload write error\n");
+		printk("DSI DPI payload write error\n");
 	if (val & EOTPE)
-		DRM_DEBUG_DRIVER("DSI EoTp error\n");
+		printk("DSI EoTp error\n");
 	if (val & PSE)
-		DRM_DEBUG_DRIVER("DSI Packet size error\n");
+		printk("DSI Packet size error\n");
 	if (val & CRCE)
-		DRM_DEBUG_DRIVER("DSI CRC error\n");
+		printk("DSI CRC error\n");
 	if (val & ECCME)
-		DRM_DEBUG_DRIVER("DSI ECC multi-bit error\n");
+		printk("DSI ECC multi-bit error\n");
 	if (val & ECCSE)
-		DRM_DEBUG_DRIVER("DSI ECC single-bit error\n");
+		printk("DSI ECC single-bit error\n");
 	if (val & TOLPRX)
-		DRM_DEBUG_DRIVER("DSI Timeout low-power reception\n");
+		printk("DSI Timeout low-power reception\n");
 	if (val & TOHSTX)
-		DRM_DEBUG_DRIVER("DSI Timeout high-speed transmission\n");
+		printk("DSI Timeout high-speed transmission\n");
 
 	return val;
 }
@@ -467,13 +467,16 @@ static int dw_mipi_dsi_write(struct dw_mipi_dsi *dsi,
 	__le32 word;
 	u32 val;
 
-	while (len) {
+	while (len) 
+	{
 		if (len < pld_data_bytes) {
 			word = 0;
 			memcpy(&word, tx_buf, len);
 			dsi_write(dsi, DSI_GEN_PLD_DATA, le32_to_cpu(word));
 			len = 0;
-		} else {
+		} 
+		else 
+		{
 			memcpy(&word, tx_buf, pld_data_bytes);
 			dsi_write(dsi, DSI_GEN_PLD_DATA, le32_to_cpu(word));
 			tx_buf += pld_data_bytes;
@@ -483,7 +486,8 @@ static int dw_mipi_dsi_write(struct dw_mipi_dsi *dsi,
 		ret = readl_poll_timeout(dsi->base + DSI_CMD_PKT_STATUS,
 					 val, !(val & GEN_PLD_W_FULL), 1000,
 					 CMD_PKT_STATUS_TIMEOUT_US);
-		if (ret) {
+		if (ret) 
+		{
 			dev_err(dsi->dev,
 				"failed to get available write payload FIFO\n");
 			return ret;
@@ -491,7 +495,7 @@ static int dw_mipi_dsi_write(struct dw_mipi_dsi *dsi,
 
 		val = dw_mipi_dsi_read_status(dsi);
 		if (val) {
-			dev_err(dsi->dev, "dsi status error 0x%0x\n", val);
+			dev_err(dsi->dev, "dsi status write error 0x%0x\n", val);
 			return -EINVAL;
 		}
 	}
@@ -529,7 +533,7 @@ static int dw_mipi_dsi_read(struct dw_mipi_dsi *dsi,
 
 		val = dw_mipi_dsi_read_status(dsi);
 		if (val) {
-			dev_err(dsi->dev, "dsi status error 0x%0x\n", val);
+			dev_err(dsi->dev, "dsi status read error 0x%0x\n", val);
 			return -EINVAL;
 		}
 
@@ -559,18 +563,21 @@ static ssize_t dw_mipi_dsi_host_transfer(struct mipi_dsi_host *host,
 	if (dsi->slave)
 		dw_mipi_message_config(dsi->slave, msg);
 
-	while (retry--) {
+	while (retry--) 
+	{
 		ret = dw_mipi_dsi_write(dsi, &packet);
 		if (ret)
 			continue;
 
-		if (dsi->slave) {
+		if (dsi->slave) 
+		{
 			ret = dw_mipi_dsi_write(dsi->slave, &packet);
 			if (ret)
 				continue;
 		}
 
-		if (msg->rx_buf && msg->rx_len) {
+		if (msg->rx_buf && msg->rx_len) 
+		{
 			ret = dw_mipi_dsi_read(dsi, msg);
 			if (ret)
 				continue;
@@ -961,7 +968,11 @@ static void dw_mipi_dsi_mode_set(struct dw_mipi_dsi *dsi,
 	int ret;
 	u32 lanes = dw_mipi_dsi_get_lanes(dsi);
 
+	printk("dw_mipi_dsi_mode_set be called\n");
+
 	clk_prepare_enable(dsi->pclk);
+
+	printk("mode_flags = %u, lanes = %u, format = %u, lane_mbps = %u\n",dsi->mode_flags,lanes,dsi->format,dsi->lane_mbps);
 
 	ret = phy_ops->get_lane_mbps(priv_data, adjusted_mode, dsi->mode_flags,
 				     lanes, dsi->format, &dsi->lane_mbps);
@@ -997,6 +1008,7 @@ static void dw_mipi_dsi_mode_set(struct dw_mipi_dsi *dsi,
 
 	if (phy_ops->power_on)
 		phy_ops->power_on(dsi->plat_data->priv_data);
+	printk("[dw_mipi_dsi_mode_set] finish\n");
 }
 
 static void dw_mipi_dsi_bridge_mode_set(struct drm_bridge *bridge,
@@ -1005,9 +1017,20 @@ static void dw_mipi_dsi_bridge_mode_set(struct drm_bridge *bridge,
 {
 	struct dw_mipi_dsi *dsi = bridge_to_dsi(bridge);
 
+	printk("[dw_mipi_dsi_bridge_mode_set] bridge node is %pOF ",bridge->of_node);
+
+	if(!dsi)
+	{
+		printk("[dw_mipi_dsi_bridge_mode_set] bridge_to_dsi is null\n");
+	}
+
 	dw_mipi_dsi_mode_set(dsi, adjusted_mode);
 	if (dsi->slave)
+	{
+		printk("[dw_mipi_dsi_bridge_mode_set] slave mode set");
 		dw_mipi_dsi_mode_set(dsi->slave, adjusted_mode);
+	}
+		
 }
 
 static void dw_mipi_dsi_bridge_enable(struct drm_bridge *bridge)
@@ -1231,8 +1254,6 @@ __dw_mipi_dsi_probe(struct platform_device *pdev,
 		goto err_pmr_enable;
 	}
 	printk("[__dw_mipi_dsi_probe] mipi_dsi_host_register success\n");
-
-	
 
 	dsi->bridge.driver_private = dsi;
 	dsi->bridge.funcs = &dw_mipi_dsi_bridge_funcs;

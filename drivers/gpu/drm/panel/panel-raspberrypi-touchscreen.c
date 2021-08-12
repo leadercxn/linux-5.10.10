@@ -197,6 +197,42 @@ struct rpi_touchscreen {
 
 static const struct drm_display_mode rpi_touchscreen_modes[] = {
 	{
+		/* Modeline for 25862069 clock */
+		.clock = 25862069 / 1000,
+		.hdisplay = 800,
+		.hsync_start = 800 + 1,
+		.hsync_end = 800 + 1 + 2,
+		.htotal = 800 + 1 + 2 + 45,
+		.vdisplay = 480,
+		.vsync_start = 480 + 7,
+		.vsync_end = 480 + 7 + 2,
+		.vtotal = 480 + 7 + 2 + 20,
+	},
+	{
+		/* (800 + 200) * (480 + 20) * 50 = 25000000 */
+		.clock = 25000000 / 1000,
+		.hdisplay = 800,
+		.hsync_start = 800 + 154,
+		.hsync_end = 800 + 154 + 2,
+		.htotal = 800 + 154 + 2 + 42,
+		.vdisplay = 480,
+		.vsync_start = 480 + 1,
+		.vsync_end = 480 + 1 + 2,
+		.vtotal = 480 + 1 + 2 + 17,
+	},
+ 	{
+		/* (800 + 100) * (480 + 70) * 50 = 24750000 */
+		.clock = 24750000 / 1000,
+		.hdisplay = 800,
+		.hsync_start = 800 + 54,
+		.hsync_end = 800 + 54 + 2,
+		.htotal = 800 + 54 + 2 + 44,
+		.vdisplay = 480,
+		.vsync_start = 480 + 49,
+		.vsync_end = 480 + 49 + 2,
+		.vtotal = 480 + 49 + 2 + 19,
+	},
+	{
 		/* Modeline comes from the Raspberry Pi firmware, with HFP=1
 		 * plugged in and clock re-computed from that.
 		 */
@@ -280,9 +316,10 @@ static int rpi_touchscreen_disable(struct drm_panel *panel)
 {
 	struct rpi_touchscreen *ts = panel_to_ts(panel);
 
-//	rpi_touchscreen_i2c_write(ts, REG_PWM, 0);
+	printk("[rpi_touchscreen_disable] be call\n");
+	rpi_touchscreen_i2c_write(ts, REG_PWM, 0);
 
-//	rpi_touchscreen_i2c_write(ts, REG_POWERON, 0);
+	rpi_touchscreen_i2c_write(ts, REG_POWERON, 0);
 	udelay(1);
 
 	return 0;
@@ -298,6 +335,60 @@ static int rpi_touchscreen_enable(struct drm_panel *panel)
 	struct rpi_touchscreen *ts = panel_to_ts(panel);
 	int i;
 
+	struct device_node *endpoint, *dsi_host_node;
+	struct mipi_dsi_host *host;
+	struct mipi_dsi_device_info info = {
+		.type = RPI_DSI_DRIVER_NAME,
+		.channel = 0,
+		.node = NULL,
+	};
+
+	printk("rpi_touchscreen_enable be called\n");
+
+	if(!ts->dsi)
+	{
+		/* Look up the DSI host.  It needs to probe before we do. */
+		endpoint = of_graph_get_next_endpoint(ts->i2c->dev.of_node, NULL);
+		if (!endpoint)
+		{
+			return -ENODEV;
+		}
+			
+		printk("endpoint = %pOF\n",endpoint);
+
+		dsi_host_node = of_graph_get_remote_port_parent(endpoint);
+		if (!dsi_host_node)
+			{
+				printk("can not find dsi_host_node\n");
+			}
+
+		printk("dsi_host_node = %pOF\n",dsi_host_node);
+
+		host = of_find_mipi_dsi_host_by_node(dsi_host_node);
+		of_node_put(dsi_host_node);
+		if (!host) {
+				of_node_put(endpoint);
+				printk("of_find_mipi_dsi_host_by_node fail\n");
+				return -EPROBE_DEFER;
+			}
+
+		info.node = of_graph_get_remote_port(endpoint);
+		if (!info.node)
+			{
+				printk("of_graph_get_remote_port fail\n");
+			}
+
+		of_node_put(endpoint);
+
+		ts->dsi = mipi_dsi_device_register_full(host, &info);
+		if (IS_ERR(ts->dsi)) 
+			{
+				printk("DSI device registration failed: %ld\n",PTR_ERR(ts->dsi));
+				return PTR_ERR(ts->dsi);
+			}
+
+	}
+
 	rpi_touchscreen_i2c_write(ts, REG_POWERON, 1);
 	usleep_range(20000, 25000);
 	/* Wait for nPWRDWN to go low to indicate poweron is done. */
@@ -306,24 +397,27 @@ static int rpi_touchscreen_enable(struct drm_panel *panel)
 			break;
 	}
 
-	rpi_touchscreen_write(ts, DSI_LANEENABLE,
+	if(ts->dsi)
+	{
+		printk("[rpi_touchscreen_enable] To configure ts->dsi\n");
+		rpi_touchscreen_write(ts, DSI_LANEENABLE,
 			      DSI_LANEENABLE_CLOCK |
 			      DSI_LANEENABLE_D0);
-	rpi_touchscreen_write(ts, PPI_D0S_CLRSIPOCOUNT, 0x05);
-	rpi_touchscreen_write(ts, PPI_D1S_CLRSIPOCOUNT, 0x05);
-	rpi_touchscreen_write(ts, PPI_D0S_ATMR, 0x00);
-	rpi_touchscreen_write(ts, PPI_D1S_ATMR, 0x00);
-	rpi_touchscreen_write(ts, PPI_LPTXTIMECNT, 0x03);
+		rpi_touchscreen_write(ts, PPI_D0S_CLRSIPOCOUNT, 0x05);
+		rpi_touchscreen_write(ts, PPI_D1S_CLRSIPOCOUNT, 0x05);
+		rpi_touchscreen_write(ts, PPI_D0S_ATMR, 0x00);
+		rpi_touchscreen_write(ts, PPI_D1S_ATMR, 0x00);
+		rpi_touchscreen_write(ts, PPI_LPTXTIMECNT, 0x03);
 
-	rpi_touchscreen_write(ts, SPICMR, 0x00);
-	rpi_touchscreen_write(ts, LCDCTRL, 0x00100150);
-	rpi_touchscreen_write(ts, SYSCTRL, 0x040f);
-	msleep(100);
+		rpi_touchscreen_write(ts, SPICMR, 0x00);
+		rpi_touchscreen_write(ts, LCDCTRL, 0x00100150);
+		rpi_touchscreen_write(ts, SYSCTRL, 0x040f);
+		msleep(100);
 
-	rpi_touchscreen_write(ts, PPI_STARTPPI, 0x01);
-	rpi_touchscreen_write(ts, DSI_STARTDSI, 0x01);
-	msleep(100);
-
+		rpi_touchscreen_write(ts, PPI_STARTPPI, 0x01);
+		rpi_touchscreen_write(ts, DSI_STARTDSI, 0x01);
+		msleep(100);
+	}
 	/* Turn on the backlight. */
 	rpi_touchscreen_i2c_write(ts, REG_PWM, 255);
 
@@ -334,6 +428,7 @@ static int rpi_touchscreen_enable(struct drm_panel *panel)
 	 */
 	rpi_touchscreen_i2c_write(ts, REG_PORTA, BIT(2));
 
+	printk("[rpi_touchscreen_enable] success\n");
 	return 0;
 }
 
@@ -342,13 +437,17 @@ static int rpi_touchscreen_get_modes(struct drm_panel *panel,
 {
 	unsigned int i, num = 0;
 	static const u32 bus_format = MEDIA_BUS_FMT_RGB888_1X24;
+	
+	printk("[rpi_touchscreen_get_modes] be call\n");
 
-	for (i = 0; i < ARRAY_SIZE(rpi_touchscreen_modes); i++) {
+	for (i = 0; i < ARRAY_SIZE(rpi_touchscreen_modes); i++) 
+	{
 		const struct drm_display_mode *m = &rpi_touchscreen_modes[i];
 		struct drm_display_mode *mode;
 
 		mode = drm_mode_duplicate(connector->dev, m);
-		if (!mode) {
+		if (!mode) 
+		{
 			dev_err(panel->dev, "failed to add mode %ux%u@%u\n",
 				m->hdisplay, m->vdisplay,
 				drm_mode_vrefresh(m));
@@ -365,6 +464,8 @@ static int rpi_touchscreen_get_modes(struct drm_panel *panel,
 		drm_mode_probed_add(connector, mode);
 		num++;
 	}
+
+	printk("[rpi_touchscreen_get_modes] mode num = %d\n",num);
 
 	connector->display_info.bpc = 8;
 	connector->display_info.width_mm = 154;
@@ -404,6 +505,7 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 		return -ENOMEM;
 	}
 
+	/* i2c->dev->driver_data = ts*/
 	i2c_set_clientdata(i2c, ts);
 
 	ts->i2c = i2c;
@@ -431,6 +533,7 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 
 	printk("open REG_PWM...\n");
 
+#if 0
 	/* Look up the DSI host.  It needs to probe before we do. */
 	endpoint = of_graph_get_next_endpoint(dev->of_node, NULL);
 	if (!endpoint)
@@ -448,7 +551,7 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 
 	printk("dsi_host_node = %pOF\n",dsi_host_node);
 
-#if 0
+
 	host = of_find_mipi_dsi_host_by_node(dsi_host_node);
 	of_node_put(dsi_host_node);
 	if (!host) {
@@ -512,6 +615,8 @@ static int rpi_touchscreen_dsi_probe(struct mipi_dsi_device *dsi)
 {
 	int ret;
 
+	printk("rpi_touchscreen_dsi_probe be called\n");
+
 	dsi->mode_flags = (MIPI_DSI_MODE_VIDEO |
 			   MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			   MIPI_DSI_MODE_LPM);
@@ -523,6 +628,7 @@ static int rpi_touchscreen_dsi_probe(struct mipi_dsi_device *dsi)
 	if (ret)
 		dev_err(&dsi->dev, "failed to attach dsi to host: %d\n", ret);
 
+	printk("[rpi_touchscreen_dsi_probe] success\n");
 	return ret;
 }
 
@@ -548,7 +654,9 @@ static struct i2c_driver rpi_touchscreen_driver = {
 
 static int __init rpi_touchscreen_init(void)
 {
-	mipi_dsi_driver_register(&rpi_touchscreen_dsi_driver);
+	int ret = 0;
+	ret = mipi_dsi_driver_register(&rpi_touchscreen_dsi_driver);
+	printk("[mipi_dsi_driver_register] return ret = %d\n",ret);
 	return i2c_add_driver(&rpi_touchscreen_driver);
 }
 module_init(rpi_touchscreen_init);
