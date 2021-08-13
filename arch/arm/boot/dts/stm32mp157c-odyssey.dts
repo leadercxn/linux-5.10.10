@@ -81,12 +81,6 @@
 		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
 		power-supply= <&v3v3>;
 		status = "okay";
-
-		port {
-			panel_in: endpoint {
-				remote-endpoint = <&dsi_out>;
-			};
-		};
 	};
 };
 
@@ -123,6 +117,20 @@
 			reg = <1>;
 			dsi_out: endpoint {
 				remote-endpoint = <&panel_in>;
+			};
+		};
+	};
+
+	panel@0 {
+		compatible = "raspberrypi,7inch-touchscreen-panel";
+		reg = <0>;
+		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		power-supply= <&v3v3>;
+		status = "okay";
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi_out>;
 			};
 		};
 	};
