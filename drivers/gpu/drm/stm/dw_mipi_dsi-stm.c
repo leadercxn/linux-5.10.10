@@ -209,10 +209,6 @@ static int dw_mipi_dsi_phy_init(void *priv_data)
 	u32 val;
 	int ret;
 
-	if(!priv_data)
-	{
-		printk("[dw_mipi_dsi_phy_init] priv_data is null\n");
-	}
 	/* Enable the regulator */
 	dsi_set(dsi, DSI_WRPCR, WRPCR_REGEN | WRPCR_BGREN);
 	ret = readl_poll_timeout(dsi->base + DSI_WISR, val, val & WISR_RRS,
@@ -220,7 +216,6 @@ static int dw_mipi_dsi_phy_init(void *priv_data)
 	if (ret)
 	{
 		DRM_DEBUG_DRIVER("!TIMEOUT! waiting REGU, let's continue\n");
-		printk("[dw_mipi_dsi_phy_init] !TIMEOUT! waiting REGU, let's continue\n");
 	}
 		
 
@@ -231,10 +226,8 @@ static int dw_mipi_dsi_phy_init(void *priv_data)
 	if (ret)
 	{
 		DRM_DEBUG_DRIVER("!TIMEOUT! waiting PLL, let's continue\n");
-		printk("[dw_mipi_dsi_phy_init] !TIMEOUT! waiting PLL, let's continue\n");
 	}
 
-	printk("[dw_mipi_dsi_phy_init] success\n");
 	return 0;
 }
 
@@ -336,12 +329,9 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 
 	*lane_mbps = pll_out_khz / 1000;
 
-	DRM_DEBUG_DRIVER("pll_in %ukHz pll_out %ukHz lane_mbps %uMHz\n",
+	DRM_INFO("pll_in %ukHz pll_out %ukHz lane_mbps %uMHz\n",
 			 pll_in_khz, pll_out_khz, *lane_mbps);
 
-	printk("pll_in %ukHz pll_out %ukHz lane_mbps %uMHz\n",
-			 pll_in_khz, pll_out_khz, *lane_mbps);
-	printk("[dw_mipi_dsi_get_lane_mbps] success...\n");
 	return 0;
 }
 
@@ -463,15 +453,13 @@ static int dw_mipi_dsi_stm_probe(struct platform_device *pdev)
 		goto err_dsi_probe;
 	}
 
-	printk("dw_mipi_dsi_stm_probe success!");
-
 	return 0;
 
 err_dsi_probe:
-	printk("dw_mipi_dsi_stm_probe err_dsi_probe!");
+	DRM_ERROR("dw_mipi_dsi_stm_probe err_dsi_probe!");
 	clk_disable_unprepare(dsi->pllref_clk);
 err_clk_get:
-	printk("dw_mipi_dsi_stm_probe err_clk_get!");
+	DRM_ERROR("dw_mipi_dsi_stm_probe err_clk_get!");
 	regulator_disable(dsi->vdd_supply);
 
 	return ret;

@@ -1008,7 +1008,6 @@ static void dw_mipi_dsi_mode_set(struct dw_mipi_dsi *dsi,
 
 	if (phy_ops->power_on)
 		phy_ops->power_on(dsi->plat_data->priv_data);
-	printk("[dw_mipi_dsi_mode_set] finish\n");
 }
 
 static void dw_mipi_dsi_bridge_mode_set(struct drm_bridge *bridge,
